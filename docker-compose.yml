@@ -1,0 +1,9 @@
+version: '2'
+services:
+  couchdb:
+    image: "apache/couchdb:1.7.1"
+    environment:
+      - COUCHDB_USER=user
+      - COUCHDB_PASSWORD=password
+    ports:
+      - "5984:5984"
