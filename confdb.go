@@ -5,6 +5,8 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -16,10 +18,11 @@ type TestDocument struct {
 	Note  string
 }
 
-func main() {
+func prepareDb() {
 	timeout := time.Duration(500 * time.Millisecond)
-	conn, err := couchdb.NewConnection("127.0.0.1", 5984, timeout)
-	auth := couchdb.BasicAuth{Username: "user", Password: "password"}
+	couchPort, _ := strconv.Atoi(os.Getenv("COUCHDB_PORT"))
+	conn, err := couchdb.NewConnection(os.Getenv("COUCHDB_HOST"), couchPort, timeout)
+	auth := couchdb.BasicAuth{Username: os.Getenv("COUCHDB_USER"), Password: os.Getenv("COUCHDB_PASSWORD")}
 	conn.CreateDB("mydatabase", &auth)
 	db := conn.SelectDB("mydatabase", &auth)
 	theDoc := TestDocument{
@@ -37,14 +40,18 @@ func main() {
 	rev, err = db.Save(theDoc, theId, rev)
 	fmt.Println(rev)
 	fmt.Println(err)
+}
+
+func main() {
 
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("GET").Path("/").HandlerFunc(Index)
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
 	log.Println("Got request")
+	prepareDb()
 	fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 }
